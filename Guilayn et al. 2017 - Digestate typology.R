@@ -1,11 +1,6 @@
 
 #### 1.PREPARATION ####
 #### 1.1 Loading packages (not all of them are for this code) #### 
-libraries=c("Hmisc","colorspace","corrplot","pvclust","mixOmics","RColorBrewer",
-            "FactoMineR","missMDA","FactoMineR","ggplot2", "tidyr",
-            "gplots","scales","grid","plyr","gridExtra",
-            "devtools","factoextra","ggrepel", "viridis",
-            "WriteXLS","dendextend","cluster","reshape2","readxl","pvclust","pls","lubridate")
 
 libraries=c("readxl","WriteXLS","plyr","reshape2","ggplot2","tidyr","Hmisc","corrplot","dendextend","missMDA","FactoMineR","colorspace","gplots","factoextra","cluster","ggrepel")
 install_this=libraries[which(lapply(libraries, require, character.only = TRUE) == F)]
@@ -763,7 +758,6 @@ WriteXLS(write.PCA.data,
 } 
 
 #### 4.4.3. PCA plots ####
-# ADJUSTING SOME POINTS FOR PLOTS: REMOVING OUTLIERS FROM CONF. INTERVALS #
 
 for (i in 1:length(states))
 {
@@ -916,9 +910,7 @@ Final.groups=list(raw=c(1,2,3,5,6,7),
 #### 5.2.Ploting for the original HCA/PCA variables (but not center-scaled) ####
 for (i in 1:length(Final.groups)){
   print(paste0("running i=",i," /",length(Final.groups)))
-  temp=states[i]
-  print(temp)
-  print(names(Final.groups)[i])
+  temp=names(Final.groups)[i]
   HCAgroups.temp=get(paste0("HCAgroups.",temp))
   datainputNA.temp=get(paste0("datainputNA.",temp))
   dataPCA.temp=get(paste0("dataPCA.",temp))
@@ -937,7 +929,7 @@ for (i in 1:length(Final.groups)){
   mean.n <- function(x){
     return(c(y = mean(x), label = round(mean(x),2)))} 
   
-  pdf(paste0(wd,"/",states[i],"/Boxplots/",toupper(temp),"_singleplot.pdf"), width = 7, height = 4)
+  pdf(paste0(wd,"/",temp,"/Boxplots/",toupper(temp),"_singleplot.pdf"), width = 7, height = 4)
   plot(plot
        + facet_wrap(~variable ,scales="free",nrow = 1, ncol = NULL) #,labeller=labeller(.cols=labelsVAR))
        + labs(title="Boxplots for HCA groups",x="HCA groups",y="Values in different scale")
@@ -958,9 +950,7 @@ for (i in 1:length(Final.groups)){
 #### OBS. COLUMNS MANUALLY ADJUSTED ####
 for (i in 1:length(Final.groups)){
   print(paste0("running i=",i," /",length(Final.groups)))
-  temp=states[i]
-  print(temp)
-  print(names(Final.groups)[i])
+  temp=names(Final.groups)[i]
   HCAgroups.temp=get(paste0("HCAgroups.",temp))
   datainput.othervar.temp=datainput.othervar[which(datainput.othervar$ID %in% HCAgroups.temp$ID),]
   dataVAR.temp=datainput.othervar.temp[,9:ncol(datainput.othervar)]
@@ -1034,7 +1024,7 @@ for (i in 1:length(Final.groups)){
   plot2=ggplot(data=dimelt.databasic.temp, aes(x=group, y=value))+geom_boxplot(aes(fill=group.name))
   plot4=ggplot(data=dimelt.heavymetals.temp, aes(x=group, y=value))+geom_boxplot(aes(fill=group.name))
   
-  pdf(paste0(wd,"/",states[i],"/Boxplots_LEGISLATION/",toupper(temp),"_legislation_basics_singleplot.pdf"))
+  pdf(paste0(wd,"/",temp,"/Boxplots_LEGISLATION/",toupper(temp),"_legislation_basics_singleplot.pdf"))
   plot(plot2
        + facet_wrap(~variable ,scales="free",nrow = NULL, ncol = NULL) #,labeller=labeller(.cols=labelsVAR))
        + labs(title="Boxplots for HCA groups",x="HCA groups",y="Values in different scale")
@@ -1049,7 +1039,7 @@ for (i in 1:length(Final.groups)){
   )
   dev.off()
   
-  pdf(paste0(wd,"/",states[i],"/Boxplots_LEGISLATION/",toupper(temp),"_heavy_metals_singleplot.pdf"))
+  pdf(paste0(wd,"/",temp,"/Boxplots_LEGISLATION/",toupper(temp),"_heavy_metals_singleplot.pdf"))
   plot(plot4
        + facet_wrap(~variable ,scales="free",nrow = NULL, ncol = NULL) #,labeller=labeller(.cols=labelsVAR))
        + labs(title="Boxplots for HCA groups",x="HCA groups",y="Values in different scale")
