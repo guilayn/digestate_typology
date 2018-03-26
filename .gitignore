@@ -2,3 +2,10 @@
 .Rhistory
 .RData
 .Ruserdata
+all/
+raw/
+liq/
+sld/
+dataPCA.xls
+excluded_IDs.csv
+NA_subst_for_PCA.xls
