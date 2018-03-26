@@ -1,68 +1,75 @@
 
-
 #### 1.PREPARATION ####
-#### 1.1 Loading packages (not all of them are in for this code) #### 
+#### 1.1 Loading packages (not all of them are for this code) #### 
 libraries=c("Hmisc","colorspace","corrplot","pvclust","mixOmics","RColorBrewer",
             "FactoMineR","missMDA","FactoMineR","ggplot2", "tidyr",
             "gplots","scales","grid","plyr","gridExtra",
             "devtools","factoextra","ggrepel", "viridis",
-            "WriteXLS","dendextend","cluster","reshape2","readxl","pvclust","pls")
+            "WriteXLS","dendextend","cluster","reshape2","readxl","pvclust","pls","lubridate")
 
-
+libraries=c("readxl","WriteXLS","plyr","reshape2","ggplot2","tidyr","Hmisc","corrplot","dendextend","missMDA","FactoMineR","colorspace","gplots","factoextra","cluster","ggrepel")
 install_this=libraries[which(lapply(libraries, require, character.only = TRUE) == F)]
 install.packages(install_this) #installing what could not be loaded
+install_this=libraries[which(lapply(libraries, require, character.only = TRUE) == F)]
 
 #### 1.2 Cleaing the workspace ####
 rm(list=ls(all=TRUE)) 
 
 #### 1.3 Setting working directory ####
 
-data_wd="XXXXX/" # complete pathway of the directory containing the excel database
-file_name="YYYYY.xlsx" ###name of database excel file inside data_wd
-wd="ZZZZ" # complete pathway of working directory for saving plots and output tables
+data_wd = getwd() # complete pathway of the directory containing the excel database
+file_name="Guilayn et al. 2018 INPUT DATA.xlsx" ###name of database excel file inside data_wd
+wd = getwd() # complete pathway of working directory for saving plots and output tables
 setwd(wd)
 
-#### 1.4 Creating directories for file exportation ####
+##### 1.4 Creading the subsets defined in the paper (Table 1) ####
+
+states=c("all", "raw","liq", "sld")
+all=c("RW","RD","P_SF","LF","SF")
+raw=c("RW","RD","P_SF")
+liq="LF"
+sld="SF"
+liststates=list(all,raw,liq,sld)
+statedescription=c("all digestate and separation fractions from wet and dry AD", 
+                   "raw digestate (whole)",
+                   "liquid fraction of digestate from wet and dry AD",
+                   "solid fraction of digestate from wet and dry AD"
+                   )
+#### 1.5 Creating directories for file exportation ####
 
 for (i in 1:length(states))
 {
   temp=states[i]
   dir.create(paste(states[i]))
   dir.create(paste0(wd,"/",states[i],"/Initial_Boxplots"))
+  dir.create(paste0(wd,"/",states[i],"/SHAPIRO"))
   dir.create(paste0(wd,"/",states[i],"/Corr_matrix"))
   dir.create(paste0(wd,"/",states[i],"/HCA"))
-  dir.create(paste0(wd,"/",states[i],"/HCA/Optimal_n_cluster"))
-  dir.create(paste0(wd,"/",states[i],"/HCA/pvclust"))
+  dir.create(paste0(wd,"/",states[i],"/Optimal_n_cluster"))
   dir.create(paste0(wd,"/",states[i],"/PCA"))
-  dir.create(paste0(wd,"/",states[i],"/SHAPIRO"))
   dir.create(paste0(wd,"/",states[i],"/Boxplots"))
   dir.create(paste0(wd,"/",states[i],"/Boxplots_LEGISLATION"))
 }
 
-#### 1.5 Importing databases from excel ####
-#### 1.5.1. Main database with data for statistics ####
-datainput = read_excel(path = paste0(data_wd,
-                                     file_name),
-                       sheet="REPLACE_BY_SHEET_NAME", 
-                       range="INSERT_CELLS_RANGE", 
+#### 1.6 Importing databases from excel ####
+#### 1.6.1. Main database with data for statistics and comparison to legistlation####
+datainput = read_excel(path = file_name,
+                       sheet="DATA_STATISTICS", 
                         na = "NA",
                        col_names = TRUE)
 
 datainput=as.data.frame(datainput)
 which(lapply(datainput, class) != "numeric") ###VERIFY IF NUMERIC DATA IS IMPORT AS NUMERIC
 
-#### 1.5.2. Data with other associated variables of interest for final boxplots ####
-datainput.othervar=read_excel(path = paste0(data_wd,
-                                            file_name),
-                              sheet="REPLACE_BY_SHEET_NAME",
-                              range="INSERT_CELLS_RANGE",
+datainput.othervar=read_excel(path = file_name,
+                              sheet="DATA_LEGISLATION",
                               na = "NA",
                               col_names = TRUE)
 
 datainput.othervar=as.data.frame(datainput.othervar)
 which(lapply(datainput.othervar, class) != "numeric") ###VERIFY IF NUMERIC DATA IS IMPORT AS NUMERIC
 
-#### 1.6. Make sure every ID is different ####
+#### 1.7. Make sure every ID is different ####
 print(if (length(unique(datainput$ID))==nrow(datainput)) {
   "OK" 
 } else 
@@ -72,22 +79,22 @@ print(if (length(unique(datainput$ID))==nrow(datainput)) {
   repetid
 })
 
-#### 1.7 Defining which columns are used for the correlation matrix, HCA and PCA ####
+#### 1.8 Defining which columns are used for the correlation matrix, HCA and PCA ####
 
 ##1st column of data with AD process input for correlation matrix
-St.cor.det="NAME OF COLUMN HERE" #Start of process input data. Used for correlation matrix. No NA problem. Everything from here must be numeric
+St.cor.det="RT.d" #Start of process input data. Used for correlation matrix. No NA problem. Everything from here must be numeric
 
 ##1st column of data with digestate characteristics for correlation matrix
-St.charac.det="NAME OF COLUMN HERE" #Start of digestate charact data. Used for correlation matrix. No NA problem. Everything from here must be numeric
+St.charac.det="Cd" #Start of digestate charact data. Used for correlation matrix. No NA problem. Everything from here must be numeric
 
 ##1st column of numerical data for HCA and PCA
-St.PCA.det="NAME OF COLUMN HERE" #Start of digestate charact data used for HCA and PCA. Avoid NAs as much as possible. Everything from here must be numeric
+St.PCA.det="C/N" #Start of digestate charact data used for HCA and PCA. Avoid NAs as much as possible. Everything from here must be numeric
 
-#### 1.8. Defining max. number of NAs per line of data ####
+#### 1.9. Defining max. number of NAs per line of data ####
 #### Lines with more than N.NA will be excluded from the PCA and HCA analysis
 N.NA=1   ###limit of NA values per line (for the PCA only)
 
-#### 1.9 Selecting datasources, as defined in the database ####
+#### 1.10 Selecting datasources and exluding outliers (if necessary), as defined in the database ####
 datasource=c(
   "P", #P=Probiotic
   "D",  #D=DIVA
@@ -95,7 +102,7 @@ datasource=c(
   "L",  #L=LBE
   "B")  #B=BIBLIO: including probiotic
 
-#### 1.9. Excluding digestate lines according to add, usefull for outliers ####
+#### Excluding digestate lines according to add, usefull for outliers ####
 excludeID=c() 
           
 excludeIDdf=data.frame("Excluded ID"=excludeID)
@@ -103,17 +110,6 @@ datainput=subset.data.frame(datainput, !(datainput$ID %in% excludeID))
 datainput=subset.data.frame(datainput, datainput$Source %in% datasource)
 #exporting list of excluded digestates
 write.csv2(x=excludeIDdf, file="excluded_IDs.csv",row.names = TRUE)
-
-##### 1.10 Creading the subsets defined in the paper (Table 1) ####
-states=c("all", "raw", "liq", "sld")
-all=c("RW","RD","P_SF","LF","SF")
-raw=c("RW","RD","P_SF")
-liq="LF"
-sld="SF"
-liq_raw=c("RW","LF")
-sld_raw=c("RD","SF")
-liststates=list(all,raw,liq,sld)
-statedescription=c("") #not being used
 
 #### 2. Manipulating data for statistical analysis ####
 #### 2.1. Creating data frames that will be used latter ####
@@ -135,7 +131,6 @@ for (i in 1:length(states))
       assign(paste0("datainputNA",".",temp), datainputNA.temp)
 
   
-  assign(paste0("dataCORR_inout.",temp),datainput.temp[,St.cor:ncol(datainput.temp)])       
   assign(paste0("dataCORR_ch.",temp),datainput.temp[,St.charac:ncol(datainput.temp)])       
   dataPCA.temp=datainputNA.temp[,St.PCA:ncol(datainput.temp)]
   # Removing columns with over 1/3 NAs (not possible to perform statistics if greater than 2/3) 
@@ -188,7 +183,7 @@ for (i in 1:length(states))
   writeNAtables[i]=paste0("NAtable.",states[i])
 }
 
-source.summary=ddply(datainputNA.all,.(Source, State),summarize, nb=length(Source))
+source.summary=ddply(datainputNA.all,.(Source, State),plyr::summarize, nb=length(Source))
 
 WriteXLS(c("source.summary",writeNAtables), ExcelFileName = "NA_subst_for_PCA.xls", SheetNames = c("Source_summary",states), perl = "perl",
          verbose = FALSE, Encoding = c("UTF-8", "latin1", "cp1252"),
@@ -239,7 +234,7 @@ temp=states[i]
 dataPCA.temp=get(paste0("dataPCA.",temp))
 
 shap.temp = lapply(dataPCA.temp, shapiro.test)
-str(shap.temp[[1]])
+
 shapresult.temp = sapply(shap.temp, `[`, c("statistic","p.value"))
 shapresult.temp=t(shapresult.temp)
 assign(paste0("shapresult.",temp),shapresult.temp)
@@ -267,21 +262,19 @@ for (i in 1:length(states))
 {
   print(paste0("running i=",i," /",length(states)))
   temp=states[i]
+  
   dataCORR_ch.temp=get(paste0("dataCORR_ch.",temp))
-  dataCORR_inout.temp=get(paste0("dataCORR_inout.",temp))
+
+
   matrrcor_ch.temp=rcorr(as.matrix(dataCORR_ch.temp), type=c("pearson","spearman"))
-  matrrcor_inout.temp=rcorr(as.matrix(dataCORR_inout.temp), type=c("pearson","spearman"))
+
   assign(paste0("matrrcor_ch.",temp),matrrcor_ch.temp)
-  assign(paste0("matrrcor_inout.",temp),matrrcor_inout.temp)
   assign(paste0("r2_ch.",temp),as.data.frame(matrrcor_ch.temp$r))
   assign(paste0("pv_ch.",temp),as.data.frame(matrrcor_ch.temp$P))
   assign(paste0("nb.pairs_ch",temp),as.data.frame(matrrcor_ch.temp$n))
-  assign(paste0("r2_inout.",temp),as.data.frame(matrrcor_inout.temp$r))
-  assign(paste0("pv_inout.",temp),as.data.frame(matrrcor_inout.temp$P))
-  assign(paste0("nb.pairs_inout",temp),as.data.frame(matrrcor_inout.temp$n))
+
   
   write.corr_ch.matrix.data=c(paste0("r2_ch.",temp),paste0("pv_ch.",temp),paste0("nb.pairs_ch",temp))
-  write.corr_inout.matrix.data=c(paste0("r2_inout.",temp),paste0("pv_inout.",temp),paste0("nb.pairs_inout",temp))
   # Exporting excel
   WriteXLS(write.corr_ch.matrix.data, 
            ExcelFileName = paste(wd,"/",temp,"/Corr_matrix/",toupper(temp),"_correlation_matrix_charact_data.xls",sep=""), 
@@ -292,78 +285,41 @@ for (i in 1:length(states))
            na = "",
            FreezeRow = 1, FreezeCol = 0,
            envir = parent.frame())
-  WriteXLS(write.corr_inout.matrix.data, 
-           ExcelFileName = paste(wd,"/",temp,"/Corr_matrix/",toupper(temp),"_correlation_matrix_inout_data.xls",sep=""), 
-           SheetNames = c("r2","p_value","n"), perl = "perl",
-           verbose = FALSE, Encoding = c("UTF-8", "latin1", "cp1252"),
-           row.names = TRUE, col.names = TRUE,
-           AdjWidth = FALSE, AutoFilter = TRUE, BoldHeaderRow = TRUE,
-           na = "",
-           FreezeRow = 1, FreezeCol = 0,
-           envir = parent.frame())
+
   #### plotting ####
   col = colorRampPalette(c("#BB4444", "#EE9988", "#FFFFFF", "#77AADD", "#4477AA"))
   
   pdf(paste0(wd,"/",temp,"/Corr_matrix/",toupper(temp),"_corrmatrix.dig.charac.only_pv01.pdf"))
-  corrplot::corrplot(matrrcor_ch.temp$r, method="color", col=col(200),
+  corrplot(matrrcor_ch.temp$r, method="color", col=col(200),
            #mar = c(0, 0,0, 0),
            type="lower", #order="hclust", hclust.method = "average", 
-           addCoef.col = "black", # Ajout du coefficient de corrélation
+           addCoef.col = "black", # Ajout du coefficient de corr?lation
            number.cex= 7/ncol(matrrcor_ch.temp$r),
            tl.col="black", tl.srt=45, #Rotation des etiquettes de textes
            tl.cex = 9/ncol(matrrcor_ch.temp$r), cl.cex = 9/ncol(matrrcor_ch.temp$r),
-           # Combiner avec le niveau de significativité
+           # Combiner avec le niveau de significativit?
            p.mat = matrrcor_ch.temp$P, sig.level = 0.01, insig = "blank", 
-           # Cacher les coefficients de corrélation sur la diagonale
+           # Cacher les coefficients de corr?lation sur la diagonale
            diag=FALSE,
            na.label="NA", na.label.col="grey")
   title("p-value<0.01", line=2)
   dev.off()
   
   pdf(paste0(wd,"/",temp,"/Corr_matrix/",toupper(temp),"_corrmatrix.dig.charac.only_pv05.pdf"))
-  corrplot::corrplot(matrrcor_ch.temp$r, method="color", col=col(200),
+  corrplot(matrrcor_ch.temp$r, method="color", col=col(200),
            type="lower", #order="hclust", hclust.method = "average", 
-           addCoef.col = "black", # Ajout du coefficient de corrélation
+           addCoef.col = "black", # Ajout du coefficient de corr?lation
            number.cex= 7/ncol(matrrcor_ch.temp$r),
            tl.col="black", tl.srt=45, #Rotation des etiquettes de textes
            tl.cex = 9/ncol(matrrcor_ch.temp$r), cl.cex = 9/ncol(matrrcor_ch.temp$r),
-           # Combiner avec le niveau de significativité
+           # Combiner avec le niveau de significativit?
            p.mat = matrrcor_ch.temp$P, sig.level = 0.05, insig = "blank", 
-           # Cacher les coefficients de corrélation sur la diagonale
+           # Cacher les coefficients de corr?lation sur la diagonale
            diag=FALSE,
            na.label="NA", na.label.col="grey")
   title("p-value<0.05", line=2)
   dev.off()
   
-  pdf(paste0(wd,"/",temp,"/Corr_matrix/",toupper(temp),"_corrmatrix.inout.inoutparam_pv01.pdf"))
-  corrplot::corrplot(matrrcor_inout.temp$r, method="color", col=col(200), 
-           type="full", #order="hclust",#hclust.method = "average", 
-           addCoef.col = "black", # Ajout du coefficient de corrélation
-           number.cex= 7/ncol(matrrcor_inout.temp$r),
-           tl.col="black", tl.srt=45, #Rotation des etiquettes de textes
-           tl.cex = 9/ncol(matrrcor_inout.temp$r), cl.cex = 9/ncol(matrrcor_inout.temp$r),
-           # Combiner avec le niveau de significativité
-           p.mat = matrrcor_inout.temp$P, sig.level = 0.01, insig = "blank", 
-           # Cacher les coefficients de corrélation sur la diagonale
-           diag=FALSE,
-           na.label="NA", na.label.col="grey")
-      title("p-value<0.01", line=2)
-    dev.off()
- 
-  pdf(paste0(wd,"/",temp,"/Corr_matrix/",toupper(temp),"_corrmatrix.inout.inoutparam_pv05.pdf"))
-  corrplot::corrplot(matrrcor_inout.temp$r, method="color", col=col(200), 
-           type="full", #order="hclust",#hclust.method = "average", 
-           addCoef.col = "black", # Ajout du coefficient de corrélation
-           number.cex= 7/ncol(matrrcor_inout.temp$r),
-           tl.col="black", tl.srt=45, #Rotation des etiquettes de textes
-           tl.cex = 9/ncol(matrrcor_inout.temp$r), cl.cex = 9/ncol(matrrcor_inout.temp$r),
-           # Combiner avec le niveau de significativité
-           p.mat = matrrcor_inout.temp$P, sig.level = 0.05, insig = "blank", 
-           # Cacher les coefficients de corrélation sur la diagonale
-           diag=FALSE,
-           na.label="NA", na.label.col="grey")
-       title("p-value<0.05", line=2)
-    dev.off()
 }
 
 #### 4. Advanced statistics ####
@@ -538,18 +494,18 @@ scaled_data=as.matrix(scale(dataPCA.complete.temp))
 hc.temp=get(paste0("hc.",temp))
 
 #plots
-pdf(paste0(wd,"/",temp,"/HCA/Optimal_n_cluster/",toupper(temp),"_HCA_n-cluster_wss.",hc.temp$hclust$method,".pdf"),
+pdf(paste0(wd,"/",temp,"/Optimal_n_cluster/",toupper(temp),"_HCA_n-cluster_wss.",hc.temp$hclust$method,".pdf"),
     width = 7, height = 8.75)
   plot(fviz_nbclust(scaled_data, FUN = hcut, method = "wss", k.max = 15))
 dev.off()
   
-pdf(paste0(wd,"/",temp,"/HCA/Optimal_n_cluster/",toupper(temp),"_HCA_n-cluster_silh.",hc.temp$hclust$method,".pdf"),
+pdf(paste0(wd,"/",temp,"/Optimal_n_cluster/",toupper(temp),"_HCA_n-cluster_silh.",hc.temp$hclust$method,".pdf"),
     width = 7, height = 8.75)
   plot(fviz_nbclust(scaled_data, FUN = hcut, method = "silhouette"))
 dev.off()
   
 gap_stat = clusGap(scaled_data, FUN = hcut, K.max = 10, B = 1000)
-pdf(paste0(wd,"/",temp,"/HCA/Optimal_n_cluster/",toupper(temp),"_HCA_n-cluster_gapstat.",hc.temp$hclust$method,".pdf"),
+pdf(paste0(wd,"/",temp,"/Optimal_n_cluster/",toupper(temp),"_HCA_n-cluster_gapstat.",hc.temp$hclust$method,".pdf"),
     width = 7, height = 8.75)
  plot(fviz_gap_stat(gap_stat))
 dev.off()
@@ -564,7 +520,7 @@ dev.off()
 hcagnames.all=c("") #not being used
 hcagnames.description.all=c("") #not being used
 
-  
+# AS DEFINED ON PAPER: #
 hcagnames.raw=c("1. Fibrous feedstock: Cattle slurry, silage mono/co-dig.(n=19/22)",#1    1. Lab. OFMSW/GW",
                 "2. Sewage sludge, Biowaste, FAI mono/co-digestion (n=18/19)",#"2. Manure and FAI co-digestion",
                 "3. OFMSW, Food Waste, FAI, Pig slurry mono/co-digestion (n=23/23)",
@@ -585,39 +541,6 @@ hcagnames.sld=c("1. SS mono/co-dig. (n=12/18, pig slurry mono/co-dig. (n=5/18), 
                 "3. Fibrous material (n=15/17), low perf. separation (n=13/16)"
                 )
                 
-hcagnames.description.sld=c() #not being used
-
-###### CLUSTERS DEFINED FOR HEAVY METAL CONTENT TYPOLOGY IN THE PAPER ####
-hcagnames.all=c("1. Overall high content but moderate Cd (n=9). Feedstock: SS mono-dig. (n=7/9), OFMSW (n=2/9)",
-                "2. Overall high content especially Cr  (n=3). Feedstock: SS (n=3/3)",
-                "3. High Cd content (n=5). Feedstock: Silage > 70% (n=5/5) ",
-                "4. Overall low content (n=61). Feedstock: Manures, OFMSW, Foodwaste, Silage, FAI",
-                "5. Relative high Cu and Zn content (n=11). Feedstock: SS mono/co-dig. (n=7/11), Pig or cattle slurry (n=4/11=)")
-hcagnames.description.all=c("") #not being used
-
-
-hcagnames.raw=c("1. Overall high content especially Cr and Ni (n=2)",
-                "2. Overall high content especially Cr and Cu  (n=1)",
-                "3. Overall high content but moderate Cd (n=6)",
-                "4. High Cd content (n=2)",
-                "5. Moderated high Cu and Zn content (n=6)",
-                "6. Overall low content (n=30)")
-hcagnames.description.raw=c() #not being used
-
-hcagnames.liq=c("1. Overall high content but Cd (n=1)",
-                "2. High Cd content (n=2)",
-                "3. High Cu and Zn content (n=4)",
-                "4. High Ni content (n=2)",
-                "5. Overall low content (n=9), moderate Zn (n=3/9)")
-
-hcagnames.description.liq=c() #not being used
-
-hcagnames.sld=c("1. High Cd content (n=1)",
-                "2. Overal low contents (n=16)",
-                "3. Overal high contents (n=2)",
-                "4. High Zn content (n=1)",
-                "5. Overal high contents but Cd (n=4)")
-
 hcagnames.description.sld=c() #not being used
 
 
@@ -796,6 +719,7 @@ for (i in 1:length(states))
   print(paste0("running i=",i," /",length(states)))
   temp=states[i]
   digest.PCA.temp=get(paste0("digest.PCA.",temp))
+  nb.temp = get(paste0("nb.",temp))
 
   
 ## Excel data ##
@@ -808,23 +732,28 @@ loading.matrix.temp=digest.PCA.temp$var$coord
   assign(paste0("loading.matrix.",temp),as.data.frame(loading.matrix.temp))
 
 # Correlations between PCs and input variables
-PCcorr.temp=dimdesc(digest.PCA.temp, axes=c(1,2))
+PCcorr.temp=dimdesc(digest.PCA.temp, axes=1:(nb.temp$ncp))
   assign(paste0("PCcorr.",temp),PCcorr.temp)
 PC1corr.temp=PCcorr.temp$Dim.1$quanti
   assign(paste0("PC1corr.",temp),as.data.frame(PC1corr.temp))
 PC2corr.temp=PCcorr.temp$Dim.2$quanti
   assign(paste0("PC2corr.",temp),as.data.frame(PC2corr.temp))
-
+if (nb.temp$ncp>2) {
+PC3corr.temp=PCcorr.temp$Dim.3$quanti
+assign(paste0("PC3corr.",temp),as.data.frame(PC3corr.temp))  
+}
 # aka values
 aka.temp=digest.PCA.temp$ind$coord
   assign(paste0("aka.",temp),as.data.frame(aka.temp))
   
 # EXCEL OUTPUT
 write.PCA.data=c("source.summary",paste0("eigenvalues.",temp),paste0("loading.matrix.",temp),
-                 paste0("PC1corr.",temp),paste0("PC2corr.",temp))
+                 paste0("PC1corr.",temp),paste0("PC2corr.",temp),if(nb.temp$ncp>2){paste0("PC3corr.",temp)})
+sheetnames.PCA = c("Data.summary","Eigen_values","load_matrix","PC1_corr","PC2_corr",if(nb.temp$ncp>2){"PC3_corr"})
 WriteXLS(write.PCA.data, 
          ExcelFileName = paste(wd,"/",temp,"/PCA/",toupper(temp),"_PCA_output_data.xls",sep=""), 
-         SheetNames = c("Data.summary","Eigen_values","load_matrix","PC1_corr","PC2_corr"), perl = "perl",
+         SheetNames = sheetnames.PCA,
+         perl = "perl",
          verbose = FALSE, Encoding = c("UTF-8", "latin1", "cp1252"),
          row.names = TRUE, col.names = TRUE,
          AdjWidth = FALSE, AutoFilter = TRUE, BoldHeaderRow = TRUE,
@@ -835,8 +764,6 @@ WriteXLS(write.PCA.data,
 
 #### 4.4.3. PCA plots ####
 # ADJUSTING SOME POINTS FOR PLOTS: REMOVING OUTLIERS FROM CONF. INTERVALS #
-#HCAgroups.liq[which(HCAgroups.liq$ID %in% c("S61","PB169","PB170")),2] = 3
-#HCAgroups.liq[which(HCAgroups.liq$ID %in% c("S61","PB169","PB170")),3] = "2. Outliers"
 
 for (i in 1:length(states))
 {
@@ -927,36 +854,54 @@ dev.off()
 # Plot by HCA groups 
   HCAgroups.temp=get(paste0("HCAgroups.",temp))
   nbg.temp=get(paste0("nbg.",temp))
-  
+  shapevaluesb=c(15,16,17,18,25,7,8,9,10,11,12,13,4,3,14,0,1,2,3,4,5,6,21,22,23,24,25)
+# WITH ELLIPSE  
   if (nbg.temp>1) {
-    shapevaluesb=c(15,16,17,18,25,7,8,9,10,11,12,13,4,3,14,0,1,2,3,4,5,6,21,22,23,24,25)
-    pdf(paste0(wd,"/",temp,"/PCA/",toupper(temp),"_PCAbiplot.HCAgroups.pdf"))
+    pdf(paste0(wd,"/",temp,"/PCA/",toupper(temp),"_PCAbiplot12.HCAgroups.pdf"))
     plot(fviz_pca_biplot(digest.PCA.temp, 
                          habillage = as.factor(HCAgroups.temp$group.name), addEllipses = TRUE, label="var") ########## if there is group names
-         #annotate(geom="text", x=(0.3763738+0.2), y=(-0.2959116-0.1), label="CS", color="black") +
-         #annotate(geom="text", x=(-2.75), y=(3.6), label="2 Manure", color="black")
          + scale_shape_manual(values=shapevaluesb[1:length(unique(HCAgroups.temp$group.name))])
          + guides(fill=guide_legend(ncol=2))
          + theme(legend.title=element_text(colour="black", size=12, face="bold"),
                  legend.position="bottom",legend.direction="vertical")
     )
     dev.off()
+    if (digest.PCA.temp$call$ncp > 2) {
+    pdf(paste0(wd,"/",temp,"/PCA/",toupper(temp),"_PCAbiplot13.HCAgroups.pdf"))
+    plot(fviz_pca_biplot(digest.PCA.temp, axes = c(1,3),
+                         habillage = as.factor(HCAgroups.temp$group.name), addEllipses = TRUE, label="var") ########## if there is group names
+         + scale_shape_manual(values=shapevaluesb[1:length(unique(HCAgroups.temp$group.name))])
+         + guides(fill=guide_legend(ncol=2))
+         + theme(legend.title=element_text(colour="black", size=12, face="bold"),
+                 legend.position="bottom",legend.direction="vertical")
+    )
+    dev.off()
+    }
   }
-
+# WITHOUT ELLIPSE
 if (nbg.temp>1) {
-  shapevaluesb=c(15,16,17,18,25,7,8,9,10,11,12,13,4,3,14,0,1,2,3,4,5,6,21,22,23,24,25)
-  pdf(paste0(wd,"/",temp,"/PCA/",toupper(temp),"_PCAbiplot.HCAgroups NO ELLIPSE.pdf"))
+  pdf(paste0(wd,"/",temp,"/PCA/",toupper(temp),"_PCAbiplot12.HCAgroups NO ELLIPSE.pdf"))
   plot(fviz_pca_biplot(digest.PCA.temp, 
                         habillage = as.factor(HCAgroups.temp$group.name), addEllipses = FALSE, label="var") ########## if there is group names
-          #annotate(geom="text", x=(0.3763738+0.2), y=(-0.2959116-0.1), label="CS", color="black") +
-          #annotate(geom="text", x=(-2.75), y=(3.6), label="2 Manure", color="black")
-         + scale_shape_manual(values=shapevaluesb[1:length(unique(HCAgroups.temp$group.name))])
+        +  scale_shape_manual(values=shapevaluesb[1:length(unique(HCAgroups.temp$group.name))])
         + scale_fill_manual(name="HCA groups")
        + guides(fill=guide_legend(ncol=2))
         + theme(legend.title=element_text(colour="black", size=12, face="bold"),
         legend.position="bottom",legend.direction="vertical")
                )
+  if (digest.PCA.temp$call$ncp > 2) {
     dev.off()
+    pdf(paste0(wd,"/",temp,"/PCA/",toupper(temp),"_PCAbiplot13.HCAgroups NO ELLIPSE.pdf"))
+    plot(fviz_pca_biplot(digest.PCA.temp, axes = c(1,3),
+                         habillage = as.factor(HCAgroups.temp$group.name), addEllipses = FALSE, label="var") ########## if there is group names
+         + scale_shape_manual(values=shapevaluesb[1:length(unique(HCAgroups.temp$group.name))])
+         + scale_fill_manual(name="HCA groups")
+         + guides(fill=guide_legend(ncol=2))
+         + theme(legend.title=element_text(colour="black", size=12, face="bold"),
+                 legend.position="bottom",legend.direction="vertical")
+    )
+    dev.off()
+  }
     }
 
 } 
@@ -964,12 +909,9 @@ if (nbg.temp>1) {
 #### 5. Boxplots with absolute values ####
 #### 5.1. Selecting retained HCA groups
 #### 5.1.1. As used for the fertilizing value typology ####
-Final.groups=list(all=c(1), #all was not being used
-                  raw=c(1,2,3,5,6,7),
+Final.groups=list(raw=c(1,2,3,5,6,7),
                   liq=c(1,2),
                   sld=c(1,3))
-#### 5.1.1. As used for the heavy metals conntent typology ####
-Final.groups=list(all=c(1:5))
 
 #### 5.2.Ploting for the original HCA/PCA variables (but not center-scaled) ####
 for (i in 1:length(Final.groups)){
