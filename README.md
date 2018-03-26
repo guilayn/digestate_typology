@@ -11,7 +11,7 @@ a. LBE, INRA, Univ Montpellier, 102 avenue des Etangs, 11100, Narbonne.
 
 
 
-The input data, i.e., the associated database to the publication consists of the "Guilayn et al. 2018 INPUT DATA.xlsx" file.
+The input data, i.e., the associated database to the publication consists of the "Guilayn et al. 2018 INPUT DATA.xlsx" file. Please consider checking the "Readmine" sheet on this Excel file.
 By fully running the R script "Guilayn et al. 2017 - Digestate typology.R" one can reproduce the same figures presented in the paper. The R code is divded in sections. In this sections, the same loop applies the same handling, statistics and plots to each dataset presented in Table 1 (c.f. paper).
 
 - Figure 1 (in paper) is "digestate_typology\all\HCA\ALL_HCA_HEATMAP.ward.D2_FINAL.pdf" after aesthetical modifications with an image editor.
