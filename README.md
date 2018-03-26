@@ -2,9 +2,10 @@
 R code associated to the publication Guilayn et al. 2017, entitled 
 **"First  fertilizing-value typology of digestates".**
 Co-authors:
-F. GUILAYN&ordf;&#42;, J. JIMENEZ&ordf;, M. ROUEZ&#42;, M. CREST&#42;, D. PATUREAU&ordf; 
-a. LBE, INRA, Univ Montpellier, 102 avenue des Etangs, 11100, Narbonne
-*. Suez, CIRSEE, 38 rue du Président Wilson, 78230, Le Pecq, France
+
+F. GUILAYN&ordf;&#42;, J. JIMENEZ&ordf;, M. ROUEZ&#42;, M. CREST&#42;, D. PATUREAU&ordf;.
+a. LBE, INRA, Univ Montpellier, 102 avenue des Etangs, 11100, Narbonne.
+*. Suez, CIRSEE, 38 rue du Président Wilson, 78230, Le Pecq, France.
 
 ------------
 
