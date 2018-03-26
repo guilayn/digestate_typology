@@ -13,7 +13,7 @@ rm(list=ls(all=TRUE))
 #### 1.3 Setting working directory ####
 
 data_wd = getwd() # complete pathway of the directory containing the excel database
-file_name="Guilayn et al. 2018 INPUT DATA.xlsx" ###name of database excel file inside data_wd
+file_name="Guilayn et al. 2017 INPUT DATA.xlsx" ###name of database excel file inside data_wd
 wd = getwd() # complete pathway of working directory for saving plots and output tables
 setwd(wd)
 
