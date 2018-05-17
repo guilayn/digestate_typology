@@ -917,12 +917,20 @@ for (i in 1:length(Final.groups)){
   datainputBP.temp=data.frame(HCAgroups.temp,group=0,dataPCA.temp)
   datainputBP.temp$group=paste0(datainputBP.temp$HCAgroups)
   datainputBP.temp=subset.data.frame(datainputBP.temp, datainputBP.temp$HCAgroups %in% Final.groups[[i]])
+  datainputBP_fert_potential.temp = ddply(datainputBP.temp,
+                                          .(ID,HCAgroups,group.name,group),
+                                          summarise, 
+                                          Fert_pot = 0.1*sum(TN,TP*2.2915,TK*1.2047))
+  datainputBP_fert_potential.temp=na.omit(datainputBP_fert_potential.temp)
   assign(paste0("datainputBP.",temp),datainputBP.temp)
-  dimelt.temp=melt(datainputBP.temp, id.vars=c("ID","HCAgroups","group.name","group"))
-  
+  datainputBP_fert_potential.temp = data.frame(datainputBP_fert_potential.temp,state=temp)
+  assign(paste0("datainputBP_fert_potential.",temp),datainputBP_fert_potential.temp)
+    dimelt.temp=melt(datainputBP.temp, id.vars=c("ID","HCAgroups","group.name","group"))
+
 ### PLOT
   
   plot=ggplot(data=dimelt.temp, aes(x=group, y=value))+geom_boxplot(aes(fill=group.name))
+  plot_fertpot=ggplot(data=datainputBP_fert_potential.temp, aes(x=group, y=Fert_pot))+geom_boxplot(aes(fill=group.name))
   
   give.n <- function(x){
     return(c(y = 1.02*as.numeric(quantile(x,prob=0.75)), label = length(x)))}
@@ -944,7 +952,59 @@ for (i in 1:length(Final.groups)){
   )
   dev.off()
   
+  pdf(paste0(wd,"/",temp,"/Boxplots/",toupper(temp),"_FERT_POTENTIAL_singleplot.pdf"), width = 7, height = 4)
+  plot(plot_fertpot
+       + labs(title="Boxplots for HCA groups",x="HCA groups",y="N + P2O5 + K2O (%DM)")
+       + theme(plot.title = element_text(size = rel(1.5), colour = "black"),
+               legend.title=element_blank(),
+               legend.position="bottom",
+               legend.direction="horizontal")
+       + geom_hline(yintercept = 7,color="red")
+       + guides(fill = guide_legend(nrow = 2))
+       + stat_summary(fun.data = give.n, geom = "text", aes(shape="Nb. of ind."), fun.y = median,show.legend=FALSE, size=3 )
+       + stat_summary(fun.data = mean.n, aes(shape="Mean"), colour = "black", geom="point")
+       + scale_shape_manual("", values=c("Mean"="x","Nb. of ind."="N"))
+  )
+  dev.off()
+  
 }
+#### Not in paper: PLOTTING FERTILIZER POTENTIAL (DM NUTRIENT CONTENT AS MINERAL EQUIVALENTS) FOR EVERY STATE IN THE SAME PLOT ####
+data_fert_potent_all = rbind(datainputBP_fert_potential.raw,datainputBP_fert_potential.sld,datainputBP_fert_potential.liq)
+plot_fertpot_all=ggplot(data=data_fert_potent_all, aes(x=group, y=Fert_pot))+geom_boxplot(aes(fill=group.name))
+
+pdf(paste0(wd,"/FERT_POTENTIAL_singleplot.pdf"), width = 7, height = 4)
+plot(plot_fertpot_all
+     + facet_wrap(~state ,scales="free",nrow = 1, ncol = NULL) #,labeller=labeller(.cols=labelsVAR))
+     + labs(title="Boxplots for HCA groups",x="HCA groups",y="N + P2O5 + K2O (%DM)")
+     + theme(plot.title = element_text(size = rel(1.5), colour = "black"),
+             legend.title=element_blank(),
+             legend.position="bottom",
+             legend.direction="horizontal")
+     + geom_hline(yintercept = 7,color = "red")
+     + guides(fill = guide_legend(nrow = 2))
+     + stat_summary(fun.data = give.n, geom = "text", aes(shape="Nb. of ind."), fun.y = median,show.legend=FALSE, size=3 )
+     + stat_summary(fun.data = mean.n, aes(shape="Mean"), colour = "black", geom="point")
+     + scale_shape_manual("", values=c("Mean"="x","Nb. of ind."="N"))
+)
+dev.off()
+
+pdf(paste0(wd,"/FERT_POTENTIAL_singleplot_scalefixed.pdf"), width = 7, height = 4)
+plot(plot_fertpot_all
+     + facet_wrap(~state ,scales="free_x",nrow = 1, ncol = NULL) #,labeller=labeller(.cols=labelsVAR))
+     + labs(title="Boxplots for HCA groups",x="HCA groups",y="N + P2O5 + K2O (%DM)")
+     + theme(plot.title = element_text(size = rel(1.5), colour = "black"),
+             legend.title=element_blank(),
+             legend.position="bottom",
+             legend.direction="horizontal")
+     + geom_hline(yintercept = 7,color = "red")
+     + guides(fill = guide_legend(nrow = 2))
+     + stat_summary(fun.data = give.n, geom = "text", aes(shape="Nb. of ind."), fun.y = median,show.legend=FALSE, size=3 )
+     + stat_summary(fun.data = mean.n, aes(shape="Mean"), colour = "black", geom="point")
+     + scale_shape_manual("", values=c("Mean"="x","Nb. of ind."="N"))
+)
+dev.off()
+
+
 
 #### 5.3. Ploting for new variables within "other var." input data ####
 #### OBS. COLUMNS MANUALLY ADJUSTED ####
